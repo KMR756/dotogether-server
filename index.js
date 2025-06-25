@@ -25,10 +25,52 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const eventsCollection = client.db("doTogether").collection("events");
+    const eventJointUserCollection = client
+      .db("doTogether")
+      .collection("jointUser");
     // events API
     app.get("/events", async (req, res) => {
       const cursor = eventsCollection.find();
       const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.get("/jointevent", async (req, res) => {
+      const email = req.query.email;
+      const query = {
+        userEmail: email,
+      };
+      const result = await eventJointUserCollection.find(query).toArray();
+      for (const event of result) {
+        const eventId = event.eventId;
+        const eventQuery = { _id: new ObjectId(eventId) };
+        const joint = await eventsCollection.findOne(eventQuery);
+        event.title = joint.title;
+        event.location = joint.location;
+        event.eventType = joint.eventType;
+        event.eventDate = joint.eventDate;
+        event.photoURL = joint.photoURL;
+        event.organizer = joint.organizer;
+      }
+
+      res.send(result);
+    });
+
+    // joint event related APIs
+    app.post("/jointevent", async (req, res) => {
+      const { eventId, userEmail } = req.body;
+      const alreadyJoined = await eventJointUserCollection.findOne({
+        eventId,
+        userEmail,
+      });
+      if (alreadyJoined) {
+        return res.send({ joinedBefore: true });
+      }
+
+      const result = await eventJointUserCollection.insertOne({
+        eventId,
+        userEmail,
+      });
       res.send(result);
     });
 
