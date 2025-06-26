@@ -30,7 +30,12 @@ async function run() {
       .collection("jointUser");
     // events API
     app.get("/events", async (req, res) => {
-      const cursor = eventsCollection.find();
+      const email = req.query.email;
+      const query = {};
+      if (email) {
+        query.email = email;
+      }
+      const cursor = eventsCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
     });
@@ -54,7 +59,7 @@ async function run() {
         event.title = joint.title;
         event.location = joint.location;
         event.eventType = joint.eventType;
-        event.eventDate = joint.eventDate;
+        event.date = joint.date;
         event.photoURL = joint.photoURL;
         event.organizer = joint.organizer;
       }
@@ -80,6 +85,12 @@ async function run() {
       res.send(result);
     });
 
+    // app.get("/myevents", async (req, res) => {
+    //   const email = req.query.email;
+    //   const query = { email: email };
+    //   const result = await eventsCollection.find(query).toArray();
+    //   res.send(result);
+    // });
     app.get("/events/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
