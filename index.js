@@ -46,6 +46,13 @@ async function run() {
       res.send(result);
     });
 
+    app.delete("/events/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await eventsCollection.deleteOne(query);
+      res.send(result);
+    });
+
     app.get("/jointevent", async (req, res) => {
       const email = req.query.email;
       const query = {
@@ -62,6 +69,7 @@ async function run() {
         event.date = joint.date;
         event.photoURL = joint.photoURL;
         event.organizer = joint.organizer;
+        event.description = joint.description;
       }
 
       res.send(result);
