@@ -66,6 +66,23 @@ async function run() {
       const result = await eventsCollection.deleteOne(query);
       res.send(result);
     });
+
+    app.put("/events/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const user = req.body;
+      console.log(user);
+      const updatedDoc = {
+        $set: user,
+      };
+      const options = { upsert: true };
+      const result = await eventsCollection.updateOne(
+        filter,
+        updatedDoc,
+        options
+      );
+      res.send(result);
+    });
     // const eventJointUserCollection = client
     //   .db("doTogether")
     //   .collection("jointUser");
