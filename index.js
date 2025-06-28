@@ -24,6 +24,7 @@ async function run() {
     // await client.connect();
     const database = client.db("doTogether");
     const eventsCollection = database.collection("events");
+    const userJointEvent = database.collection("joinedEvent");
 
     app.get("/events", async (req, res) => {
       const allEvents = await eventsCollection.find().toArray();
@@ -36,7 +37,7 @@ async function run() {
       const eventData = req.body;
       const result = await eventsCollection.insertOne(eventData);
       console.log(result);
-      res.status(201).send({ ...result, msg: "data paisi" });
+      res.status(201).send(result);
     });
 
     // get a single event by id
@@ -57,6 +58,72 @@ async function run() {
       const event = await eventsCollection.find(filter).toArray();
       console.log(event);
       res.send(event);
+    });
+
+    // joint event
+    // In your server file (e.g., server.js or routes.js)
+
+    app.post("/joined-event", async (req, res) => {
+      try {
+        const eventData = req.body;
+
+        // Check if user already joined this event
+        const existingJoin = await userJointEvent.findOne({
+          eventId: eventData.eventId,
+          userEmail: eventData.userEmail,
+        });
+
+        if (existingJoin) {
+          return res.status(200).json({
+            message: "already_joined",
+            eventId: eventData.eventId,
+          });
+        }
+
+        // Add timestamp
+        eventData.joinedAt = new Date();
+
+        // Insert new join record
+        const result = await userJointEvent.insertOne(eventData);
+
+        res.status(201).json({
+          message: "join_success",
+          insertedId: result.insertedId,
+          eventId: eventData.eventId,
+        });
+      } catch (error) {
+        console.error("Join event error:", error);
+        res.status(500).json({
+          message: "Failed to join event",
+          error: error.message,
+        });
+      }
+    });
+
+    // Get all events joined by a specific user
+    app.get("/joined-events", async (req, res) => {
+      try {
+        const userEmail = req.query.email;
+
+        if (!userEmail) {
+          return res.status(400).json({
+            message: "Email parameter is required",
+          });
+        }
+
+        const joinedEvents = await userJointEvent
+          .find({ userEmail })
+          .sort({ joinedAt: -1 })
+          .toArray();
+
+        res.status(200).json(joinedEvents);
+      } catch (error) {
+        console.error("Error fetching joined events:", error);
+        res.status(500).json({
+          message: "Failed to fetch joined events",
+          error: error.message,
+        });
+      }
     });
 
     // delete event
